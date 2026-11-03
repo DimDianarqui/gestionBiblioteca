@@ -11,14 +11,30 @@ Original file is located at
 
 import os
 from datetime import date
+from google.colab import drive
 
 # =========================================================
 # ACCESO A DATOS (archivos de texto)
 # =========================================================
+
+# Montar Google Drive
+drive.mount('/content/datos')
+
+# Ruta base del proyecto en Drive
+rutaBase = '/content/datos/MyDrive/GestionBiblioteca/datos/'
+os.makedirs(rutaBase, exist_ok=True)
+
+# Rutas de cada archivo de persistencia
+rutaUsuarios   = rutaBase + 'usuarios.txt'
+rutaLibros     = rutaBase + 'libros.txt'
+rutaCategorias = rutaBase + 'categorias.txt'
+rutaPrestamos  = rutaBase + 'prestamos.txt'
+rutaMultas     = rutaBase + 'multas.txt'
+rutaReservas   = rutaBase + 'reservas.txt'
+
 class RepositorioArchivo:
-    def __init__(self, nombreArchivo):
-        os.makedirs("datos", exist_ok=True)
-        self.rutaArchivo = os.path.join("datos", nombreArchivo)
+    def __init__(self, rutaArchivo):
+        self.rutaArchivo = rutaArchivo
         if not os.path.exists(self.rutaArchivo):
             open(self.rutaArchivo, "w").close()
 
@@ -46,9 +62,9 @@ class RepositorioArchivo:
 # =========================================================
 class BibliotecaServicio:
     def __init__(self):
-        self.repoUsuarios = RepositorioArchivo("usuarios.txt")    # id|nombre|telefono|correo
-        self.repoLibros = RepositorioArchivo("libros.txt")        # id|titulo|categoria|totales|disponibles
-        self.repoPrestamos = RepositorioArchivo("prestamos.txt")  # id|idUsuario|idLibro|fechaPrestamo|estado
+        self.repoUsuarios = RepositorioArchivo(rutaUsuarios)    # id|nombre|telefono|correo
+        self.repoLibros = RepositorioArchivo(rutaLibros)        # id|titulo|categoria|totales|disponibles
+        self.repoPrestamos = RepositorioArchivo(rutaPrestamos)  # id|idUsuario|idLibro|fechaPrestamo|estado
 
     # ---------- Usuarios ----------
     def registrarUsuario(self, nombre, telefono, correo):
@@ -105,7 +121,64 @@ class BibliotecaServicio:
         listaHistorial.sort(key=lambda p: p[3])  # orden cronológico
         return listaHistorial
 
+def cargarDatosPrueba():
+    # Cada archivo se sobrescribe con sus registros de prueba
+    # (así, si presionas el botón dos veces, no se duplican)
 
+    # id|nombre|telefono|correo
+    RepositorioArchivo(rutaUsuarios).guardarTodo([
+        [1, "Ana Pérez", "3001234567", "ana@correo.com"],
+        [2, "Luis Gómez", "3109876543", "luis@correo.com"]
+    ])
+
+    # id|nombre
+    RepositorioArchivo(rutaCategorias).guardarTodo([
+        [1, "Programación"],
+        [2, "Novela"]
+    ])
+
+    # id|titulo|categoria|totales|disponibles
+    RepositorioArchivo(rutaLibros).guardarTodo([
+        [1, "Python Básico", "Programación", "3", "2"],
+        [2, "Cien años de soledad", "Novela", "2", "2"]
+    ])
+
+    # id|idUsuario|idLibro|fechaPrestamo|estado
+    RepositorioArchivo(rutaPrestamos).guardarTodo([
+        [1, 1, 1, "2026-11-01", "ACTIVO"],
+        [2, 2, 2, "2026-10-20", "DEVUELTO"]
+    ])
+
+    # id|idUsuario|idPrestamo|monto
+    RepositorioArchivo(rutaMultas).guardarTodo([
+        [1, 2, 2, "5000"]
+    ])
+
+    # id|idUsuario|idLibro|fechaReserva
+    RepositorioArchivo(rutaReservas).guardarTodo([
+        [1, 2, 1, "2026-11-02"]
+    ])
+
+    print("Datos de prueba cargados en:", rutaBase)
+    for nombreArchivo in os.listdir(rutaBase):
+        print(" -", nombreArchivo)
+
+# =========================================================
+# CARGAR PRUEBA
+# =========================================================
+import ipywidgets as widgets
+from IPython.display import display
+
+botonPrueba = widgets.Button(description="Cargar datos de prueba", button_style="info")
+salidaPrueba = widgets.Output()
+
+def alPresionarBoton(boton):
+    with salidaPrueba:
+        salidaPrueba.clear_output()
+        cargarDatosPrueba()
+
+botonPrueba.on_click(alPresionarBoton)
+display(botonPrueba, salidaPrueba)
 # =========================================================
 # PRESENTACIÓN (consola)
 # =========================================================
@@ -181,3 +254,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
